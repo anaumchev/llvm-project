@@ -23,6 +23,7 @@
 
 namespace llvm {
 
+class DataLayout;
 class Type;
 class FunctionType;
 class Function;
@@ -77,7 +78,7 @@ namespace Intrinsic {
                                              ArrayRef<Type *> OverloadTys);
 
   /// Return the function type for an intrinsic.
-  LLVM_ABI FunctionType *getType(LLVMContext &Context, ID id,
+  LLVM_ABI FunctionType *getType(const Module *M, ID id,
                                  ArrayRef<Type *> OverloadTys = {});
 
   /// Returns true if the intrinsic can be overloaded.
@@ -161,6 +162,7 @@ namespace Intrinsic {
     enum IITDescriptorKind {
       // Concrete types. Additional qualifiers listed in comments.
       Void,
+      Byte,
       VarArg,
       MMX,
       Token,
@@ -269,7 +271,7 @@ namespace Intrinsic {
   /// Returns false if the given type matches with the constraints, true
   /// otherwise. If returning true, an error message to indicate the reason of
   /// mismatch is printed to \p OS.
-  LLVM_ABI bool matchIntrinsicSignature(FunctionType *FTy,
+  LLVM_ABI bool matchIntrinsicSignature(const DataLayout &DL, FunctionType *FTy,
                                         ArrayRef<IITDescriptor> &Infos,
                                         SmallVectorImpl<Type *> &OverloadTys,
                                         raw_ostream &OS);
@@ -281,7 +283,8 @@ namespace Intrinsic {
   /// Returns false if the given ID and function type combination is not a
   /// valid intrinsic call. Also prints the error message to indicate the reason
   /// of the mismatch to \p OS.
-  LLVM_ABI bool isSignatureValid(Intrinsic::ID ID, FunctionType *FT,
+  LLVM_ABI bool isSignatureValid(const DataLayout &DL, Intrinsic::ID ID,
+                                 FunctionType *FT,
                                  SmallVectorImpl<Type *> &OverloadTys,
                                  raw_ostream &OS = nulls());
 
