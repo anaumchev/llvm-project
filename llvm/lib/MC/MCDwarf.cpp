@@ -1302,6 +1302,36 @@ void MCGenDwarfLabelEntry::Make(MCSymbol *Symbol, MCStreamer *MCOS,
       MCGenDwarfLabelEntry(Name, FileNumber, LineNumber, Label));
 }
 
+void MCCFIInstruction::visitDwarfRegisters(
+    function_ref<void(unsigned &DwarfReg)> Callback) {
+  auto Visitor = makeVisitor(
+      [=](CommonFields &F) {
+        Callback(F.Register);
+        Callback(F.Register2);
+      },
+      [](EscapeFields &) {}, [](LabelFields &) {},
+      [=](RegisterPairFields &F) {
+        Callback(F.Register);
+        Callback(F.Reg1);
+        Callback(F.Reg2);
+      },
+      [=](VectorRegistersFields &F) {
+        Callback(F.Register);
+        for (VectorRegisterWithLane &VRL : F.VectorRegisters)
+          Callback(VRL.Register);
+      },
+      [=](VectorOffsetFields &F) {
+        Callback(F.Register);
+        Callback(F.MaskRegister);
+      },
+      [=](VectorRegisterMaskFields &F) {
+        Callback(F.Register);
+        Callback(F.SpillRegister);
+        Callback(F.MaskRegister);
+      });
+  std::visit(Visitor, ExtraFields);
+}
+
 static int getDataAlignmentFactor(MCStreamer &streamer) {
   MCContext &context = streamer.getContext();
   const MCAsmInfo &asmInfo = context.getAsmInfo();

@@ -847,6 +847,10 @@ public:
     return std::get<EscapeFields>(ExtraFields).Comment;
   }
   SMLoc getLoc() const { return Loc; }
+
+  /// Calls @p Callback once for each Dwarf register in the  currently active
+  /// @c ExtraFields.
+  void visitDwarfRegisters(function_ref<void(unsigned &DwarfReg)> Callback);
 };
 
 struct MCDwarfFrameInfo {

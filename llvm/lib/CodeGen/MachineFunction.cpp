@@ -356,6 +356,20 @@ MachineFunction::addFrameInst(const MCCFIInstruction &Inst) {
   return FrameInstructions.size() - 1;
 }
 
+void MachineFunction::replaceFrameInstRegister(MCRegister FromReg,
+                                               MCRegister ToReg) {
+  const MCRegisterInfo *MCRI = Ctx.getRegisterInfo();
+  unsigned DwarfFromReg = MCRI->getDwarfRegNum(FromReg, false);
+  unsigned DwarfToReg = MCRI->getDwarfRegNum(ToReg, false);
+
+  auto ReplaceReg = [=](unsigned &DwarfReg) {
+    if (DwarfReg == DwarfFromReg)
+      DwarfReg = DwarfToReg;
+  };
+  for (MCCFIInstruction &Inst : FrameInstructions)
+    Inst.visitDwarfRegisters(ReplaceReg);
+}
+
 /// This discards all of the MachineBasicBlock numbers and recomputes them.
 /// This guarantees that the MBB numbers are sequential, dense, and match the
 /// ordering of the blocks within the function.  If a specific MachineBasicBlock
