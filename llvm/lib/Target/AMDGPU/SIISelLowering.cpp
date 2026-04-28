@@ -5685,7 +5685,9 @@ static bool is16bitWaveReduction(unsigned Opc) {
          Opc == AMDGPU::WAVE_REDUCE_UMIN_PSEUDO_U16 ||
          Opc == AMDGPU::WAVE_REDUCE_UMIN_PSEUDO_U16_t16 ||
          Opc == AMDGPU::WAVE_REDUCE_MIN_PSEUDO_I16_t16 ||
-         Opc == AMDGPU::WAVE_REDUCE_MIN_PSEUDO_I16;
+         Opc == AMDGPU::WAVE_REDUCE_MIN_PSEUDO_I16 ||
+         Opc == AMDGPU::WAVE_REDUCE_ADD_PSEUDO_I16 ||
+         Opc == AMDGPU::WAVE_REDUCE_SUB_PSEUDO_I16;
 }
 
 static bool is32bitWaveReduceOperation(unsigned Opc) {
@@ -6066,7 +6068,9 @@ static MachineBasicBlock *lowerWaveReduce(MachineInstr &MI,
         MI.getOpcode() == AMDGPU::WAVE_REDUCE_MAX_PSEUDO_I16_t16 ||
         MI.getOpcode() == AMDGPU::WAVE_REDUCE_MAX_PSEUDO_I16 ||
         MI.getOpcode() == AMDGPU::WAVE_REDUCE_MIN_PSEUDO_I16_t16 ||
-        MI.getOpcode() == AMDGPU::WAVE_REDUCE_MIN_PSEUDO_I16;
+        MI.getOpcode() == AMDGPU::WAVE_REDUCE_MIN_PSEUDO_I16 ||
+        MI.getOpcode() == AMDGPU::WAVE_REDUCE_ADD_PSEUDO_I16 ||
+        MI.getOpcode() == AMDGPU::WAVE_REDUCE_SUB_PSEUDO_I16;
     bool useRealTrue16 = ST.useRealTrue16Insts();
     // Create virtual registers required for lowering.
     const TargetRegisterClass *WaveMaskRegClass = TRI->getWaveMaskRegClass();
@@ -6766,6 +6770,7 @@ SITargetLowering::EmitInstrWithCustomInserter(MachineInstr &MI,
                            ST.getGeneration() >= AMDGPUSubtarget::GFX12
                                ? AMDGPU::V_MAX_NUM_F64_e64
                                : AMDGPU::V_MAX_F64_e64);
+  case AMDGPU::WAVE_REDUCE_ADD_PSEUDO_I16:
   case AMDGPU::WAVE_REDUCE_ADD_PSEUDO_I32:
     return lowerWaveReduce(MI, *BB, *getSubtarget(), AMDGPU::S_ADD_I32);
   case AMDGPU::WAVE_REDUCE_ADD_PSEUDO_U64:
@@ -6777,6 +6782,7 @@ SITargetLowering::EmitInstrWithCustomInserter(MachineInstr &MI,
                            ST.getGeneration() >= AMDGPUSubtarget::GFX12
                                ? AMDGPU::V_ADD_F64_pseudo_e64
                                : AMDGPU::V_ADD_F64_e64);
+  case AMDGPU::WAVE_REDUCE_SUB_PSEUDO_I16:
   case AMDGPU::WAVE_REDUCE_SUB_PSEUDO_I32:
     return lowerWaveReduce(MI, *BB, *getSubtarget(), AMDGPU::S_SUB_I32);
   case AMDGPU::WAVE_REDUCE_SUB_PSEUDO_U64:
