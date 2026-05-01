@@ -349,6 +349,9 @@ struct InstrumentationConfig {
     RuntimeStubsFile = BaseConfigurationOption::getStringOption(
         *this, "runtime_stubs_file",
         "The file into which runtime stubs should be written.", "");
+    DemangleFunctionNames = BaseConfigurationOption::getBoolOption(
+        *this, "demangle_function_names",
+        "Demangle functions names passed to the runtime.", true);
     TargetRegex = BaseConfigurationOption::getStringOption(
         *this, "target_regex",
         "Regular expression to be matched against the module target. "
@@ -390,12 +393,31 @@ struct InstrumentationConfig {
     return Obj;
   }
 
+  /// Mapping to remember global strings passed to the runtime.
+  DenseMap<StringRef, Constant *> GlobalStringsMap;
+
+  /// Mapping from constants to globals with the constant as initializer.
+  DenseMap<Constant *, GlobalVariable *> ConstantGlobalsCache;
+
+  Constant *getGlobalString(StringRef S, InstrumentorIRBuilderTy &IIRB) {
+    Constant *&V = GlobalStringsMap[SS.save(S)];
+    if (!V) {
+      auto &M = *IIRB.IRB.GetInsertBlock()->getModule();
+      V = IIRB.IRB.CreateGlobalString(
+          S, getRTName() + ".str",
+          M.getDataLayout().getDefaultGlobalsAddressSpace(), &M);
+      if (V->getType() != IIRB.IRB.getPtrTy())
+        V = ConstantExpr::getAddrSpaceCast(V, IIRB.IRB.getPtrTy());
+    }
+    return V;
+  }
   /// The list of enabled base configuration options.
   SmallVector<BaseConfigurationOption *> BaseConfigurationOptions;
 
   /// The base configuration options.
   BaseConfigurationOption *RuntimePrefix;
   BaseConfigurationOption *RuntimeStubsFile;
+  BaseConfigurationOption *DemangleFunctionNames;
   BaseConfigurationOption *TargetRegex;
   BaseConfigurationOption *HostEnabled;
   BaseConfigurationOption *GPUEnabled;
@@ -532,6 +554,96 @@ struct InstructionIO : public InstrumentationOpportunity {
   /// Get the name of the instruction.
   StringRef getName() const override {
     return Instruction::getOpcodeName(Opcode);
+  }
+};
+
+/// The instrumentation opportunity for functions.
+struct FunctionIO : public InstrumentationOpportunity {
+  FunctionIO(bool IsPRE)
+      : InstrumentationOpportunity(
+            InstrumentationLocation(InstrumentationLocation(
+                IsPRE ? InstrumentationLocation::FUNCTION_PRE
+                      : InstrumentationLocation::FUNCTION_POST))) {}
+  virtual ~FunctionIO() {};
+
+  enum ConfigKind {
+    PassAddress = 0,
+    PassName,
+    PassNumArguments,
+    PassArguments,
+    ReplaceArguments,
+    PassIsMain,
+    PassId,
+    NumConfig,
+  };
+
+  struct ConfigTy final : public BaseConfigTy<ConfigKind> {
+    std::function<bool(Argument &)> ArgFilter;
+
+    ConfigTy(bool Enable = true) : BaseConfigTy(Enable) {}
+  } Config;
+
+  StringRef getName() const override { return "function"; }
+
+  void init(InstrumentationConfig &IConf, LLVMContext &Ctx,
+            ConfigTy *UserConfig = nullptr);
+
+  static Value *getFunctionAddress(Value &V, Type &Ty,
+                                   InstrumentationConfig &IConf,
+                                   InstrumentorIRBuilderTy &IIRB);
+  static Value *getFunctionName(Value &V, Type &Ty,
+                                InstrumentationConfig &IConf,
+                                InstrumentorIRBuilderTy &IIRB);
+  Value *getNumArguments(Value &V, Type &Ty, InstrumentationConfig &IConf,
+                         InstrumentorIRBuilderTy &IIRB);
+  Value *getArguments(Value &V, Type &Ty, InstrumentationConfig &IConf,
+                      InstrumentorIRBuilderTy &IIRB);
+  Value *setArguments(Value &V, Value &NewV, InstrumentationConfig &IConf,
+                      InstrumentorIRBuilderTy &IIRB);
+  static Value *isMainFunction(Value &V, Type &Ty, InstrumentationConfig &IConf,
+                               InstrumentorIRBuilderTy &IIRB);
+
+  static void populate(InstrumentationConfig &IConf, LLVMContext &Ctx) {
+    for (auto IsPRE : {true, false}) {
+      auto *AIC = IConf.allocate<FunctionIO>(IsPRE);
+      AIC->init(IConf, Ctx);
+    }
+  }
+};
+
+/// The instrumentation opportunity for alloca instructions.
+struct AllocaIO : public InstructionIO<Instruction::Alloca> {
+  AllocaIO(bool IsPRE) : InstructionIO(IsPRE) {}
+  virtual ~AllocaIO() {};
+
+  enum ConfigKind {
+    PassAddress = 0,
+    ReplaceAddress,
+    PassSize,
+    ReplaceSize,
+    PassAlignment,
+    PassId,
+    NumConfig,
+  };
+
+  using ConfigTy = BaseConfigTy<ConfigKind>;
+  ConfigTy Config;
+
+  void init(InstrumentationConfig &IConf, LLVMContext &Ctx,
+            ConfigTy *UserConfig = nullptr);
+
+  static Value *getSize(Value &V, Type &Ty, InstrumentationConfig &IConf,
+                        InstrumentorIRBuilderTy &IIRB);
+  static Value *setSize(Value &V, Value &NewV, InstrumentationConfig &IConf,
+                        InstrumentorIRBuilderTy &IIRB);
+  static Value *getAlignment(Value &V, Type &Ty, InstrumentationConfig &IConf,
+                             InstrumentorIRBuilderTy &IIRB);
+
+  static void populate(InstrumentationConfig &IConf, LLVMContext &Ctx) {
+    for (auto IsPRE : {true, false}) {
+      auto *AIC = IConf.allocate<AllocaIO>(IsPRE);
+      AIC->init(IConf, Ctx);
+    }
   }
 };
 
