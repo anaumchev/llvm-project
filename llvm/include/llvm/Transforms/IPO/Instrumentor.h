@@ -647,6 +647,28 @@ struct AllocaIO : public InstructionIO<Instruction::Alloca> {
   }
 };
 
+struct UnreachableIO : public InstructionIO<Instruction::Unreachable> {
+  UnreachableIO() : InstructionIO<Instruction::Unreachable>(/*IsPRE*/ true) {}
+  virtual ~UnreachableIO() {};
+
+  enum ConfigKind {
+    PassId,
+    NumConfig,
+  };
+
+  using ConfigTy = BaseConfigTy<ConfigKind>;
+  ConfigTy Config;
+
+  void init(InstrumentationConfig &IConf, LLVMContext &Ctx,
+            ConfigTy *UserConfig = nullptr);
+
+  static void populate(InstrumentationConfig &IConf, LLVMContext &Ctx,
+                       ConfigTy *UserConfig = nullptr) {
+    auto *AIC = IConf.allocate<UnreachableIO>();
+    AIC->init(IConf, Ctx, UserConfig);
+  }
+};
+
 /// The instrumentation opportunity for store instructions.
 struct StoreIO : public InstructionIO<Instruction::Store> {
   virtual ~StoreIO() {};

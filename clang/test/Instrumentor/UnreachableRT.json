@@ -1,0 +1,15 @@
+{
+  "configuration": {
+    "runtime_prefix": "__unreachable_",
+    "runtime_prefix.description": "The runtime API prefix.",
+    "demangle_function_names": true,
+    "demangle_function_names.description": "Demangle functions names passed to the runtime."
+  },
+  "instruction_pre": {
+    "unreachable": {
+      "enabled": true,
+      "id": true,
+      "id.description": "A unique ID associated with the given instrumentor call"
+    }
+  }
+}
