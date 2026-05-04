@@ -65,3 +65,13 @@ marked using one DistinctAttribute instance per alias group.
 ## Type Interfaces
 
 [include "Dialects/BuiltinTypeInterfaces.md"]
+
+## Token Types
+
+A *token type* is any type that implements the builtin `TokenTypeInterface`.
+Tokens are SSA values that exist purely to encode a *static* def–use
+relationship between operations or regions; they carry no runtime data and
+must not be value-forwarded.
+
+See the [Tokens design note](../Tokens.md) for the structural contract,
+ODS predicates (`AnyType` / `AnyTypeOrToken` / `Token`), and examples.

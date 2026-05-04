@@ -173,6 +173,13 @@ def TestMemRefElementType : Test_Type<"TestMemRefElementType",
   let mnemonic = "memref_element";
 }
 
+// A test token type implementing the builtin `TokenTypeInterface`. Used to
+// exercise the default exclusion of tokens from `AnyType` and the explicit
+// `Token` / `AnyTypeOrToken` opt-ins.
+def TestTokenType : Test_Type<"TestToken", [TokenTypeInterface]> {
+  let mnemonic = "test_token";
+}
+
 def TestTypeTrait : NativeTypeTrait<"TestTypeTrait">;
 
 // The definition of a singleton type that has a trait.

@@ -237,6 +237,26 @@ def PtrLikeTypeInterface : TypeInterface<"PtrLikeTypeInterface"> {
 }
 
 //===----------------------------------------------------------------------===//
+// TokenTypeInterface
+//===----------------------------------------------------------------------===//
+
+def TokenTypeInterface : TypeInterface<"TokenTypeInterface"> {
+  let cppNamespace = "::mlir";
+  let description = [{
+    Intuitively, a *token* value is a pointer to an operation (via an OpResult)
+    or a pointer to a region (via an entry block argument).
+
+    More precisely, a token is an SSA value whose purpose is to encode a
+    static def–use relationship between operations or regions. It carries
+    no runtime data and is not allowed to flow through "regular"
+    value-forwarding constructs. A token's provenance cannot be obscured through
+    value forwarding.
+
+    This interface is a marker. It has no interface methods.
+  }];
+}
+
+//===----------------------------------------------------------------------===//
 // ShapedType
 //===----------------------------------------------------------------------===//
 
