@@ -1076,6 +1076,33 @@ def Builtin_None : Builtin_Type<"None", "none"> {
 }
 
 //===----------------------------------------------------------------------===//
+// TokenType
+//===----------------------------------------------------------------------===//
+
+def Builtin_Token : Builtin_Type<"Token", "token"> {
+  let summary = "Token type for static def-use links";
+  let description = [{
+    Intuitively, a *token* value is a pointer to an operation (via an OpResult)
+    or a pointer to a region (via an entry block argument).
+
+    More precisely, a token is an SSA value whose purpose is to encode a
+    static def-use relationship between operations or regions. It carries
+    no runtime data and is not allowed to flow through "regular"
+    value-forwarding constructs. A token's provenance cannot be obscured
+    through value forwarding.
+
+    See the "Tokens" design note in the documentation for details on the
+    structural contract.
+
+    Syntax:
+
+    ```
+    token-type ::= `token`
+    ```
+  }];
+}
+
+//===----------------------------------------------------------------------===//
 // OpaqueType
 //===----------------------------------------------------------------------===//
 

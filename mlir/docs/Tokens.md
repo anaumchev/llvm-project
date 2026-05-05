@@ -13,21 +13,8 @@ no runtime data and is not allowed to flow through "regular"
 value-forwarding constructs. A token's provenance cannot be obscured through
 value forwarding.
 
-In MLIR, "token" is not a single concrete builtin type. Instead, any type
-that implements the builtin `TokenTypeInterface` is treated as a token by
-the framework. Dialects can define their own dialect-specific token types.
-
-## `TokenTypeInterface`
-
-`TokenTypeInterface` is a parameterless, methodless marker type interface.
-
-A type opts in by attaching the interface in TableGen:
-
-```tablegen
-def MyDialect_Token : TypeDef<MyDialect, "MyToken", [TokenTypeInterface]> {
-  let mnemonic = "token";
-}
-```
+The token type is a builtin type. It is parameterless, opaque, and prints
+as `token`.
 
 ## Structural Contract
 
@@ -64,8 +51,15 @@ Three predicates are provided in `CommonTypeConstraints.td`:
 | ------------------ | ------------------------------------ | ----------------------------------------------------------------------|
 | `AnyType`          | any non-token type                   | the default; matches the historical meaning of "any type" pre-tokens. |
 | `AnyTypeOrToken`   | any type, including tokens           | the op legitimately accepts arbitrary types (including tokens).       |
-| `Token`            | only types implementing `TokenTypeInterface` | the op specifically takes a token operand/result.             |
+| `Token`            | only the builtin `TokenType`         | the op specifically takes a token operand/result.                     |
 
+Example:
+
+```tablegen
+def MyConsumeOp : MyDialect_Op<"consume"> {
+  let arguments = (ins Token:$scope, AnyType:$value);
+}
+```
 
 ## Examples
 
@@ -73,13 +67,13 @@ Three predicates are provided in `CommonTypeConstraints.td`:
 
 ```mlir
 // error: 'scf.if' op result #0 must be variadic of any non-token type,
-//        but got '!my.token'
-%t = scf.if %cond -> !my.token {
-  %a = my.token.produce : !my.token
-  scf.yield %a : !my.token
+//        but got 'token'
+%t = scf.if %cond -> token {
+  %a = my.token.produce : token
+  scf.yield %a : token
 } else {
-  %b = my.token.produce : !my.token
-  scf.yield %b : !my.token
+  %b = my.token.produce : token
+  scf.yield %b : token
 }
 ```
 

@@ -114,18 +114,16 @@ def SignlessLikeVariadic : TEST_Op<"signless_like_variadic"> {
 // Test Token Type
 //===----------------------------------------------------------------------===//
 
-// Produce a token. Demonstrates a type that implements the builtin
-// `TokenTypeInterface`.
+// Produce a builtin `!token` value.
 def TestTokenProduceOp : TEST_Op<"token.produce"> {
-  let results = (outs TestTokenType:$token);
-  let assemblyFormat = "attr-dict `:` type($token)";
+  let results = (outs Token:$token);
+  let assemblyFormat = "attr-dict";
 }
 
-// Consume a token (token-only operand). Uses the `Token` ODS predicate which
-// only accepts types implementing `TokenTypeInterface`.
+// Consume a builtin `!token` value (token-only operand).
 def TestTokenConsumeOp : TEST_Op<"token.consume"> {
   let arguments = (ins Token:$token);
-  let assemblyFormat = "$token attr-dict `:` type($token)";
+  let assemblyFormat = "$token attr-dict";
 }
 
 // Op that accepts any type, including a token. Uses the `AnyTypeOrToken`

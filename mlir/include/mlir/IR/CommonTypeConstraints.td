@@ -165,9 +165,8 @@ class SameBuildabilityAs<Type type, code builder> {
   code builderCall = !if(!empty(type.builderCall), "", builder);
 }
 
-// Whether a type is a token (i.e. implements TokenTypeInterface).
-def IsTokenTypePred
-    : CPred<"::llvm::isa<::mlir::TokenTypeInterface>($_self)">;
+// Whether a type is the builtin `TokenType`.
+def IsTokenTypePred : CPred<"::llvm::isa<::mlir::TokenType>($_self)">;
 
 // Any non-token type. Tokens are excluded by default to prevent ops that
 // accept arbitrary types from accidentally accepting tokens as operands /
@@ -181,9 +180,9 @@ def AnyType : Type<Neg<IsTokenTypePred>, "any non-token type">;
 // `BranchOpInterface`, etc. that legitimately handle arbitrary types).
 def AnyTypeOrToken : Type<CPred<"true">, "any type">;
 
-// A token type (any type implementing `TokenTypeInterface`).
-def Token : Type<IsTokenTypePred, "token",
-                 "::mlir::TokenTypeInterface">;
+// The builtin token type.
+def Token : Type<IsTokenTypePred, "token", "::mlir::TokenType">,
+            BuildableType<"$_builder.getType<::mlir::TokenType>()">;
 
 // None type
 def NoneType : Type<CPred<"::llvm::isa<::mlir::NoneType>($_self)">, "none type",
