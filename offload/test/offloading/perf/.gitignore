@@ -1,0 +1,4 @@
+.clangd
+compile_commands.json
+reduction_*
+out_reduction_*
